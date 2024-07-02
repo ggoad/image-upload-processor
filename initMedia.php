@@ -4,12 +4,17 @@
 	
 
 
-
+	// generates a random string, and ensures against colissions.
+	
 	$str=generateRandomString();
 	while(is_dir("temporaryUpload/$str"))
 	{
 		$str=generateRandomString();
 	}
+	
+	
+	// create dir for upload
+	
 	DirUtil::ensure("temporaryUpload/$str");
 	
 	die(json_encode([

@@ -146,7 +146,7 @@
 	</main>
 	
 	<script>
-		/// There are helper functions at the bottom of this script 
+		/* There are helper functions at the bottom of this script  */
 		var fileInput=document.getElementById("image"),
 			nameInput=document.getElementById("imageName"),
 			imgListContainer=document.getElementById("imgListContainer"),
@@ -160,6 +160,7 @@
 			submitter.setAttribute('disabled', '');
 			
 		    mod=BasicModal();
+				/* Curry to re-enable submit button upon modal close */
 				mod.OLDCLOSE=mod.CLOSE;
 				mod.CLOSE=function(){
 					submitter.removeAttribute('disabled');
@@ -220,9 +221,13 @@
 					
 					
 					var conv=1;
+					
+					/* Converts the next size of image (the cutoff is 50 px) */
 					function ConvertIt(){
 						if(w/conv < 50){
 							newImgSizes.unshift(mainImage);
+							
+							/* Change label and start uploading */
 							
 							_el.EMPTY(progressLabel);
 								_el.APPEND(progressLabel, [
@@ -238,17 +243,23 @@
 						var th=Math.floor(h/conv);
 						var tw=Math.floor(w/conv);
 						
+						/* proportional rezizing */
 						canv.width=tw; canv.height=th;
 						
 						ctx.clearRect(0,0,w,h);
 						ctx.drawImage(srcImg, 0,0,tw,th);
+						
+						/*read the canvas after the resize */
 						canv.toBlob(function(e){
+							/* push new image onto stack */
 							newImgSizes.push({
 								file:e,
 								mime:mainImage.mime,
 								name:mainImage.name,
 								sub:tw+"x"+th
 							});
+							
+							/* if it's not a webp, convert to webp */
 							if(mainImage.mime !== "image/webp"){
 								canv.toBlob(function(e){
 									newImgSizes.push({
@@ -265,6 +276,8 @@
 							}
 						}, mainImage.mime);
 					}
+					
+					/* Initial Conversion */
 					if(['image/jpg', 'image/jpeg', 'image/png'].indexOf(mainImage.mime) > -1){
 						ctx.clearRect(0,0,w,h);
 						ctx.drawImage(srcImg,0,0,w,h);
@@ -285,12 +298,14 @@
 			}
 			reader.readAsDataURL(mainImage.file);
 			
-			
+			/* Shifts next image off of stack */
 			function NextUpload(){
+				/* Update image count */ 
 				_el.EMPTY(dynImCount);
 				_el.APPEND(dynImCount, ""+imIndex);
 				imIndex++;
 				
+				/* Initializes the next image */
 				function GoForIt(med){
 					_el.EMPTY(progressLabel2);
 					
@@ -315,8 +330,11 @@
 				}
 				
 			}
+			
+			/* Sends the next chunk of the current image */
 			function ContinueUpload(med, uploadToken){
 				if(!med.chunkTracker){
+					/* initializes the chunk tracker if this is the first chunk */
 					med.chunkTracker={
 						fileSize:med.file.size,
 						chunkSize:imageChunkSize,
@@ -330,12 +348,16 @@
 					]);
 				}
 				
+				/* Update chunk message */
 				_el.EMPTY(dynChCount);
 				_el.APPEND(dynChCount, ""+med.chunkTracker.chunkIndex);
 				
+				/* Getting the actual chunk */
 				var offset=med.chunkTracker.chunkIndex*med.chunkTracker.chunkSize;
 				var chunk=med.file.slice(offset,offset+med.chunkTracker.chunkSize);
 				med.chunkTracker.chunkIndex++;
+				
+				/* Construct form data */
 				var fd=new FormData();
 				fd.append('artPk',artPk);
 				fd.append('mediaMime', med.mime);
@@ -346,10 +368,14 @@
 				fd.append('dd', chunk);
 				fd.append('uploadToken', uploadToken);
 				fd.append('final', (med.chunkTracker.chunkIndex > med.chunkTracker.numChunks)?'1':'0');
+				
 				ElFetch(_el.CREATE('div') ,"Uploading "+med.type+": "+med.name+'/'+med.sub, 
 					"continueMedia.php", 
 					{method:'POST', body:fd}, "text",{
 						success:function(j){
+							
+							/* If done, check for next image */
+							
 							if(med.chunkTracker.chunkIndex > med.chunkTracker.numChunks){
 								NextUpload();
 							}else{
@@ -364,6 +390,7 @@
 				);
 			}
 						
+			/* Rounds everything off */
 			function Seal(){
 				
 				mod.CLOSE();
